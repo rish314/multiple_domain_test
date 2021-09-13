@@ -1,13 +1,23 @@
 class UsersController < ApplicationController
-  before_action :set_user, only: %i[ show edit update destroy ]
+  before_action :set_user, only: %i[ edit update destroy ]
 
   # GET /users or /users.json
   def index
-    @users = User.all
+    logger.debug request.domain
+    logger.debug MY_DOMAIN
+    if is_subdomain = (request.subdomain.present? and request.domain == MY_DOMAIN)
+      @users = User.where(code: request.subdomain)
+    elsif custom_domain = request.domain != MY_DOMAIN
+      # domain名からusers.codeを取得する処理を追加
+      @users = User.where(code: 'user1')
+    else
+      @users = User.all
+    end
   end
 
   # GET /users/1 or /users/1.json
   def show
+    @user = User.find_by(code: request.subdomain)
   end
 
   # GET /users/new
@@ -64,6 +74,6 @@ class UsersController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def user_params
-      params.require(:user).permit(:code)
+      params.require(:user).permit(:code, :title)
     end
 end
